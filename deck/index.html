@@ -1,0 +1,125 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Pact — pitch</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0b0d12;--panel:#12151d;--line:#232838;--text:#e7ebf3;--muted:#8b93a7;
+      --accent:#5b8cff;--accent2:#7c5cff;--good:#35d07f;--warn:#ffb020}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif}
+.slide{width:1280px;height:720px;margin:24px auto;padding:64px 72px;background:
+  radial-gradient(900px 500px at 78% -12%,#1a2140 0%,var(--panel) 58%);
+  border:1px solid var(--line);border-radius:18px;position:relative;
+  display:flex;flex-direction:column;justify-content:center;page-break-after:always;overflow:hidden}
+h1{font-size:62px;line-height:1.05;margin:0 0 18px;letter-spacing:-.03em;font-weight:800}
+h2{font-size:40px;margin:0 0 26px;letter-spacing:-.02em;font-weight:700}
+p{font-size:24px;line-height:1.5;color:var(--muted);margin:0 0 16px;max-width:62ch}
+.big{font-size:30px;color:var(--text)}
+.logo{width:66px;height:66px;border-radius:17px;display:grid;place-items:center;font-size:32px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));margin-bottom:26px;color:#fff}
+.n{position:absolute;bottom:26px;right:34px;color:#475066;font-size:15px;font-weight:600}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:12px}
+.card{background:#161a24;border:1px solid var(--line);border-radius:14px;padding:24px 26px}
+.card h3{margin:0 0 9px;font-size:21px;font-weight:600}
+.card p{font-size:17.5px;margin:0}
+.kpi{display:flex;gap:46px;margin-top:26px}
+.kpi div span{display:block;font-size:52px;font-weight:800;letter-spacing:-.02em}
+.kpi div small{color:var(--muted);font-size:17px}
+.accent{color:var(--accent)} .good{color:var(--good)} .warn{color:var(--warn)}
+.flow{display:flex;align-items:center;gap:18px;margin-top:26px;flex-wrap:wrap}
+.step{background:#161a24;border:1px solid var(--line);border-left:4px solid var(--accent);
+  border-radius:12px;padding:19px 22px;flex:1;min-width:250px}
+.step h3{margin:0 0 7px;font-size:19px}.step p{font-size:16px;margin:0}
+.arrow{color:var(--accent);font-size:27px}
+.quote{font-size:31px;line-height:1.45;color:var(--text);border-left:4px solid var(--accent);
+  padding-left:26px;margin:8px 0 20px;font-weight:500}
+ul{margin:6px 0 0;padding-left:24px}li{font-size:21px;line-height:1.75;color:var(--muted)}
+li b{color:var(--text);font-weight:600}
+@media print{body{background:#fff}.slide{margin:0;border:none;border-radius:0}}
+</style></head><body>
+
+<section class="slide">
+  <div class="logo">◆</div>
+  <h1>Pact</h1>
+  <p class="big">Every promise made on a call — caught as it's spoken, and pinned to the person who made it.</p>
+  <div class="n">1</div>
+</section>
+
+<section class="slide">
+  <h2>The deal doesn't die in the demo. It dies in the follow-up.</h2>
+  <p class="big">A rep ends a call having promised six things: a revised MSA, a SOC 2 report, a pricing review, an intro.</p>
+  <p class="big">By the next morning, two of them exist only in someone's memory — and memory is where deals go to stall.</p>
+  <div class="kpi">
+    <div><span class="accent">6</span><small>promises in one 2-minute call</small></div>
+    <div><span class="warn">0</span><small>written down anywhere</small></div>
+    <div><span class="accent">—</span><small>CRM notes are written after, from memory</small></div>
+  </div>
+  <div class="n">2</div>
+</section>
+
+<section class="slide">
+  <h2>Pact listens, and writes them down for you</h2>
+  <p>Not a meeting summary. Not a transcript. Specifically the <b style="color:var(--text)">obligations</b>:
+     who owes what, by when.</p>
+  <div class="grid">
+    <div class="card"><h3 class="accent">It knows a promise from a request</h3>
+      <p>"I'll send the quote Friday" is a commitment. "Can you send me the quote?" is not. Pact only tracks what <i>you</i> owe.</p></div>
+    <div class="card"><h3 class="accent">It hears the deadline</h3>
+      <p>by Friday · tomorrow · within 48 hours · next Tuesday · end of week — extracted and attached.</p></div>
+    <div class="card"><h3 class="accent">It flags the soft ones</h3>
+      <p>"I'll <i>try</i> to get to it" is scored lower and tagged hedged — so you know which promises are real.</p></div>
+    <div class="card"><h3 class="accent">It names the owner</h3>
+      <p>Speaker diarization puts each commitment against the person who actually made it.</p></div>
+  </div>
+  <div class="n">3</div>
+</section>
+
+<section class="slide">
+  <h2>Two passes, because speed and accuracy aren't the same problem</h2>
+  <p>AssemblyAI streaming gives turns, not identity. Diarization is async-only. That constraint shaped the architecture.</p>
+  <div class="flow">
+    <div class="step"><h3 class="accent">Live pass</h3>
+      <p>Streaming WebSocket (v3). Commitments appear on screen mid-sentence, marked <i>attribution pending</i> — we never guess who spoke.</p></div>
+    <div class="arrow">→</div>
+    <div class="step" style="border-left-color:var(--good)"><h3 class="good">Close-out pass</h3>
+      <p>Async transcription with <code>speaker_labels</code> re-runs the audio and puts a real name on every promise.</p></div>
+  </div>
+  <p style="margin-top:26px">Live speed during the call. Accurate attribution the moment it ends.</p>
+  <div class="n">4</div>
+</section>
+
+<section class="slide">
+  <h2>Measured, not asserted</h2>
+  <p>A 46-second two-speaker call, run through the live API:</p>
+  <div class="kpi">
+    <div><span class="good">6/6</span><small>commitments caught</small></div>
+    <div><span class="good">100%</span><small>correctly attributed</small></div>
+    <div><span class="accent">7.5s</span><small>full close-out pass</small></div>
+    <div><span class="good">0</span><small>false positives on asks</small></div>
+  </div>
+  <p style="margin-top:30px">The extraction engine ships with 15 regression tests covering the hard negatives —
+     requests, filler, habitual statements, and promises with no deliverable.</p>
+  <div class="n">5</div>
+</section>
+
+<section class="slide">
+  <h2>Who pays for this</h2>
+  <ul>
+    <li><b>Sales teams</b> — every rep, every call. Follow-through is the whole job.</li>
+    <li><b>Customer success</b> — a missed promise to an existing customer costs renewal, not pipeline.</li>
+    <li><b>Agencies &amp; consultancies</b> — scope promised on a call is scope you owe.</li>
+    <li><b>Field service &amp; trades</b> — quotes and callbacks promised on the phone, never logged.</li>
+  </ul>
+  <p style="margin-top:26px">Per-seat, alongside the CRM — it writes the follow-up the rep was supposed to type.</p>
+  <div class="n">6</div>
+</section>
+
+<section class="slide">
+  <div class="logo">◆</div>
+  <h2 style="margin-bottom:16px">Pact</h2>
+  <div class="quote">"I'll send that over by Friday."<br/>Now it's on a list instead of in someone's memory.</div>
+  <p>Built on AssemblyAI Universal-Streaming and speaker diarization.</p>
+  <div class="n">7</div>
+</section>
+
+</body></html>

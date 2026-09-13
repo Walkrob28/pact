@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Pact — catch every promise made on a call</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css"/>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <div class="logo">◆</div>
+    <div>
+      <h1>Pact</h1>
+      <p class="tag">Every promise made on the call, caught as it's spoken.</p>
+    </div>
+  </div>
+  <div class="controls">
+    <span id="status" class="pill idle">idle</span>
+    <button id="demoBtn" class="btn ghost">▶ Demo call</button>
+    <button id="presentBtn" class="btn ghost">🎬 Present</button>
+    <button id="liveBtn" class="btn primary">● Start live call</button>
+    <button id="stopBtn" class="btn danger" hidden>■ End call</button>
+  </div>
+</header>
+
+<main>
+  <section class="panel transcript">
+    <div class="panel-head">
+      <h2>Live transcript</h2>
+      <span class="muted" id="turnCount">0 turns</span>
+    </div>
+    <div id="transcript" class="scroll">
+      <div class="empty">Start a call and the transcript streams here in real time.</div>
+    </div>
+  </section>
+
+  <section class="panel commitments">
+    <div class="panel-head">
+      <h2>Commitments <span id="cCount" class="count">0</span></h2>
+      <span class="muted" id="passLabel">live pass</span>
+    </div>
+    <div id="commitments" class="scroll">
+      <div class="empty">Promises appear the moment someone makes one.</div>
+    </div>
+    <div id="finalizeBar" class="finalize" hidden>
+      <div>
+        <strong>Call ended.</strong>
+        <span class="muted">Re-running with speaker diarization for accurate attribution…</span>
+      </div>
+      <div class="spinner"></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <span><b>Live pass</b> — AssemblyAI streaming (v3) surfaces commitments with sub-second latency.</span>
+  <span><b>Close-out pass</b> — async transcription with <code>speaker_labels</code> re-attributes each one to a real speaker.</span>
+</footer>
+<div id="caption" class="caption" hidden><span id="captionText"></span></div>
+<script src="/app.js"></script>
+</body>
+</html>
