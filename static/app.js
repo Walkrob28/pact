@@ -244,3 +244,16 @@ async function present() {
   document.body.classList.remove("presenting");
 }
 $("#presentBtn").onclick = present;
+
+// Feedback: sends ONLY the rating + comment to the team — never the notes.
+document.querySelectorAll('.fb-btn').forEach(b => b.onclick = async () => {
+  const rating = b.dataset.r;
+  const comment = (document.querySelector('#fbComment')?.value || '').trim();
+  try {
+    await fetch('/api/feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rating, comment }) });
+  } catch {}
+  document.querySelectorAll('.fb-btn').forEach(x => x.disabled = true);
+  const c = document.querySelector('#fbComment'); if (c) c.disabled = true;
+  document.querySelector('#fbThanks').hidden = false;
+});

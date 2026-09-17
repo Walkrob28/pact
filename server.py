@@ -241,6 +241,16 @@ async def _send_email(to: str, subject: str, html: str) -> bool:
         return False
 
 
+@app.post("/api/feedback")
+async def feedback(payload: dict):
+    """Capture ONLY the user's rating + comment for validation — never the notes
+    themselves. Prints to the server log so the owner can read reactions in Render."""
+    rating = str(payload.get("rating", ""))[:16]
+    comment = str(payload.get("comment", ""))[:500]
+    print(f"PACT_FEEDBACK :: rating={rating!r} comment={comment!r}", flush=True)
+    return {"ok": True}
+
+
 @app.post("/api/finalize")
 async def finalize(audio: UploadFile = File(...), email: str = Form(None)):
     """The accurate pass: real speaker attribution for every commitment, then the
