@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: pact
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn server:app --host 0.0.0.0 --port $PORT
+    autoDeploy: true
+    envVars:
+      - key: ASSEMBLYAI_API_KEY
+        sync: false      # set as a secret in the Render dashboard, never in the repo
+      - key: RESEND_API_KEY
+        sync: false      # optional: enables real email sending
+      - key: PACT_FROM_EMAIL
+        sync: false
