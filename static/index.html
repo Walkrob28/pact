@@ -19,6 +19,7 @@
     </div>
   </div>
   <div class="controls">
+    <input id="emailInput" class="email-in" type="email" placeholder="you@email.com — where to send notes" autocomplete="email"/>
     <span id="status" class="pill idle">idle</span>
     <button id="demoBtn" class="btn ghost">▶ Demo call</button>
     <button id="presentBtn" class="btn ghost">🎬 Present</button>
@@ -55,6 +56,16 @@
     </div>
   </section>
 </main>
+
+<section id="notesPanel" class="notes-panel" hidden>
+  <div class="notes-head">
+    <h2>Call notes</h2>
+    <div id="notesStatus" class="notes-status"></div>
+  </div>
+  <div id="smartNotes" class="smart-notes"></div>
+</section>
+
+<div class="legal">Use only where you're permitted to record — designed for one-party-consent regions. The recording is deleted the moment your notes are ready.</div>
 
 <footer>
   <span><b>Live pass</b> — AssemblyAI streaming (v3) surfaces commitments with sub-second latency.</span>

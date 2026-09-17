@@ -156,6 +156,8 @@ async function stopLive() {
   $("#finalizeBar").hidden = false;
   const fd = new FormData();
   fd.append("audio", new Blob(chunks, {type: "audio/webm"}), "call.webm");
+  const email = ($("#emailInput")?.value || "").trim();
+  if (email) fd.append("email", email);
   try {
     const r = await fetch("/api/finalize", {method: "POST", body: fd});
     const d = await r.json();
@@ -165,9 +167,38 @@ async function stopLive() {
     $("#passLabel").textContent = "close-out pass · diarized";
     (d.commitments || []).forEach(c => addCommitment(c, true));
     setStatus(`${d.count} commitments`, "");
+    showNotes(d, email);
   } catch {
     $("#finalizeBar").hidden = true; setStatus("close-out failed", "err");
   }
+}
+
+function showNotes(d, email) {
+  if (d.smart_notes) $("#smartNotes").innerHTML = mdToHtml(d.smart_notes);
+  else $("#smartNotes").innerHTML = '<p class="muted">' +
+    (d.commitments || []).map(c => "• " + escapeHtml(c.text)).join("<br>") + "</p>";
+  const bits = [];
+  if (d.recording_deleted) bits.push('<span class="chip ok">🔒 recording deleted</span>');
+  if (email) bits.push(d.emailed
+    ? `<span class="chip ok">✉️ emailed to ${escapeHtml(email)}</span>`
+    : `<span class="chip warn">✉️ email ready (connect a sender to auto-send)</span>`);
+  $("#notesStatus").innerHTML = bits.join(" ");
+  $("#notesPanel").hidden = false;
+  $("#notesPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+// tiny markdown -> HTML for the notes (bold + bullet lists + line breaks)
+function mdToHtml(md) {
+  const lines = escapeHtml(md).split(/\n/);
+  let html = "", inList = false;
+  for (let ln of lines) {
+    ln = ln.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+    const m = ln.match(/^\s*[\*\-]\s+(.*)/);
+    if (m) { if (!inList) { html += "<ul>"; inList = true; } html += "<li>" + m[1] + "</li>"; }
+    else { if (inList) { html += "</ul>"; inList = false; } if (ln.trim()) html += "<p>" + ln + "</p>"; }
+  }
+  if (inList) html += "</ul>";
+  return html;
 }
 
 $("#demoBtn").onclick = runDemo;
