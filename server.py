@@ -13,7 +13,7 @@ from pathlib import Path
 
 import httpx
 import websockets
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File, Form
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -145,9 +145,106 @@ async def _transcribe_with_speakers(audio: bytes) -> dict:
     raise TimeoutError("transcription timed out")
 
 
+
+
+SALES_NOTES_PROMPT = """You are an expert sales assistant taking notes on a sales call for the rep.
+
+Transcript (speaker-labelled):
+{{ transcript }}
+
+From the transcript above, produce concise, skimmable notes. Include only sections that apply:
+
+**Commitments** - who committed to what, by when (be specific about dates/deadlines)
+**Key numbers** - pricing, quantities, budget, or contract values mentioned
+**Timeline / purchasing cycle** - decision timeframe and next milestones
+**Decision-makers & roles** - who is involved and their role in the decision
+**Pain points / needs** - problems the prospect raised
+**Objections** - concerns raised and how they were handled
+**Next steps** - concrete follow-up actions
+
+Use the speaker labels to attribute. Be specific and terse. Do NOT invent anything \
+that is not clearly in the transcript."""
+
+
+LLM_GATEWAY = "https://llm-gateway.assemblyai.com/v1/chat/completions"
+LLM_MODEL = os.getenv("PACT_LLM_MODEL", "qwen3.5-4b-32k-fast")
+
+async def _gateway_notes(tid: str, prompt: str = SALES_NOTES_PROMPT) -> str | None:
+    """Run an LLM over the transcript via AssemblyAI's LLM Gateway (uses the AAI key we
+    already have; transcript_id injects the transcript into the {{ transcript }} tag).
+    Returns markdown notes, or None on failure so we fall back to the regex commitments."""
+    try:
+        async with httpx.AsyncClient(timeout=90) as cx:
+            r = await cx.post(LLM_GATEWAY,
+                headers={"Authorization": f"Bearer {API_KEY}"},
+                json={"model": LLM_MODEL, "transcript_id": tid, "max_tokens": 700,
+                      "temperature": 0.2,
+                      "messages": [{"role": "user", "content": prompt}]})
+            if r.status_code < 300:
+                txt = ((r.json().get("choices") or [{}])[0].get("message") or {}).get("content", "")
+                return txt.strip() or None
+    except Exception:
+        pass
+    return None
+
+
+async def _delete_transcript(tid: str) -> None:
+    """Privacy: once we have the notes, delete the transcript + stored audio from
+    AssemblyAI so no recording is retained after the call."""
+    try:
+        async with httpx.AsyncClient(timeout=30) as cx:
+            await cx.delete(f"{AAI_HTTP}/transcript/{tid}", headers={"authorization": API_KEY})
+    except Exception:
+        pass  # best-effort; never fail the call over cleanup
+
+
+def _format_notes_email(items: list[dict], smart_notes: str | None = None) -> tuple[str, str]:
+    """Build the follow-up email (subject, HTML) from the extracted commitments."""
+    n = len(items)
+    subject = f"Your call follow-ups — {n} commitment{'s' if n != 1 else ''}"
+    if not items:
+        rows = "<p style='color:#667'>No clear commitments were made on this call.</p>"
+    else:
+        rows = ""
+        for c in items:
+            due = f" &middot; <b>due {c['deadline']}</b>" if c.get("deadline") else ""
+            rows += (f"<li style='margin:0 0 12px;line-height:1.5'>"
+                     f"<span style='color:#5b8cff;font-weight:600'>{c.get('owner','')}</span>{due}<br>"
+                     f"{c['text']}</li>")
+        rows = f"<ul style='padding-left:18px;margin:0'>{rows}</ul>"
+    notes_html = ""
+    if smart_notes:
+        body = smart_notes.replace("**", "").replace("\n", "<br>")
+        notes_html = (f"<div style='background:#f4f7ff;border-radius:10px;padding:14px 16px;margin:0 0 18px;"
+                      f"font-size:14px;line-height:1.6'>{body}</div>")
+    html = (f"<div style='font-family:system-ui,Arial,sans-serif;max-width:560px'>"
+            f"<h2 style='margin:0 0 4px'>Call follow-ups</h2>"
+            f"<p style='color:#667;margin:0 0 18px'>Captured by Pact &middot; the recording has been deleted.</p>"
+            f"{notes_html}{rows}"
+            f"<p style='color:#99a;font-size:12px;margin-top:24px'>Pact listens for commitments and emails them to you, then deletes the recording for privacy.</p></div>")
+    return subject, html
+
+
+async def _send_email(to: str, subject: str, html: str) -> bool:
+    """Send via Resend if configured. Returns True if actually sent."""
+    key = os.getenv("RESEND_API_KEY", "").strip()
+    if not (key and to):
+        return False
+    sender = os.getenv("PACT_FROM_EMAIL", "Pact <onboarding@resend.dev>")
+    try:
+        async with httpx.AsyncClient(timeout=30) as cx:
+            r = await cx.post("https://api.resend.com/emails",
+                headers={"Authorization": f"Bearer {key}"},
+                json={"from": sender, "to": [to], "subject": subject, "html": html})
+            return r.status_code < 300
+    except Exception:
+        return False
+
+
 @app.post("/api/finalize")
-async def finalize(audio: UploadFile = File(...)):
-    """The accurate pass: real speaker attribution for every commitment."""
+async def finalize(audio: UploadFile = File(...), email: str = Form(None)):
+    """The accurate pass: real speaker attribution for every commitment, then the
+    recording is deleted and (optionally) the notes are emailed."""
     if not API_KEY:
         return JSONResponse({"error": "ASSEMBLYAI_API_KEY not set"}, status_code=400)
     try:
@@ -161,7 +258,22 @@ async def finalize(audio: UploadFile = File(...)):
         found += extract(u.get("text", ""), owner=f"Speaker {u.get('speaker','?')}",
                          turn_index=i, start_ms=u.get("start"))
     items = [c.to_dict() for c in dedupe(found)]
+
+    # smart notes: run Claude over the transcript (via LeMUR) BEFORE we delete it
+    smart_notes = None
+    if d.get("id"):
+        smart_notes = await _gateway_notes(d["id"])
+
+    # privacy: delete the transcript + stored audio now that we have the notes
+    if d.get("id"):
+        await _delete_transcript(d["id"])
+
+    # email the notes (or, with no provider configured, return them to show in-app)
+    subject, email_html = _format_notes_email(items, smart_notes)
+    emailed = await _send_email(email, subject, email_html) if email else False
     return {"commitments": items, "count": len(items),
+            "recording_deleted": bool(d.get("id")), "emailed": emailed, "smart_notes": smart_notes,
+            "email_subject": subject, "email_html": email_html,
             "duration_ms": d.get("audio_duration", 0) * 1000,
             "transcript": d.get("text", "")[:5000]}
 
