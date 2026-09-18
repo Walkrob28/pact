@@ -152,18 +152,25 @@ SALES_NOTES_PROMPT = """You are an expert sales assistant taking notes on a sale
 Transcript (speaker-labelled):
 {{ transcript }}
 
-From the transcript above, produce concise, skimmable notes. Include only sections that apply:
+Produce concise, skimmable notes. The MOST IMPORTANT rule: keep related facts TOGETHER. \
+Every order or item must carry its quantity, product, delivery date, location, and price \
+on ONE line -- never split a single order's details across separate sections. If the call \
+says "25,000 lbs by end of August to Oklahoma City", those belong together.
 
-**Commitments** - who committed to what, by when (be specific about dates/deadlines)
-**Key numbers** - pricing, quantities, budget, or contract values mentioned
-**Timeline / purchasing cycle** - decision timeframe and next milestones
-**Decision-makers & roles** - who is involved and their role in the decision
-**Pain points / needs** - problems the prospect raised
-**Objections** - concerns raised and how they were handled
-**Next steps** - concrete follow-up actions
+Organize exactly as:
 
-Use the speaker labels to attribute. Be specific and terse. Do NOT invent anything \
-that is not clearly in the transcript."""
+**Orders & deliverables** -- one bullet per distinct order/item, each combining quantity + \
+product + delivery date + location + price (whatever was mentioned) in a single line. \
+Example: "25,000 lbs citric acid -> deliver to Oklahoma City warehouse by end of August".
+
+**Commitments & next steps** -- who committed to what, by when. Attach the specific \
+number/date to each commitment so it stands alone.
+
+**Context** -- decision-maker(s) and their role, buying cadence, annual targets, pain points, \
+and objections. Only put things here that do NOT belong to a specific order above.
+
+Attribute using the speaker labels. Be specific and terse. Do NOT invent anything that is \
+not clearly in the transcript. Omit any section that would be empty."""
 
 
 LLM_GATEWAY = "https://llm-gateway.assemblyai.com/v1/chat/completions"
