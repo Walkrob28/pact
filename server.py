@@ -147,29 +147,36 @@ async def _transcribe_with_speakers(audio: bytes) -> dict:
 
 
 
-SALES_NOTES_PROMPT = """You are an expert sales assistant taking notes on a sales call for the rep.
+SALES_NOTES_PROMPT = """You are an expert sales assistant writing notes FOR THE SALES REP after a call. \
+The rep already knows their own pitch and the prices they offered -- so focus the notes on what \
+is actually useful to them: what the CUSTOMER needs, and what the REP has to follow up on.
 
 Transcript (speaker-labelled):
 {{ transcript }}
 
-Produce concise, skimmable notes. The MOST IMPORTANT rule: keep related facts TOGETHER. \
-Every order or item must carry its quantity, product, delivery date, location, and price \
-on ONE line -- never split a single order's details across separate sections. If the call \
-says "25,000 lbs by end of August to Oklahoma City", those belong together.
+First infer who is the rep (the seller -- pitches, quotes prices) and who is the customer \
+(the buyer -- states needs, quantities, deadlines, objections).
+
+MOST IMPORTANT rule: keep related facts TOGETHER. Every order or requirement carries its \
+quantity, product, delivery date, location, and any agreed price on ONE line -- never split \
+a single item's details across sections.
 
 Organize exactly as:
 
-**Orders & deliverables** -- one bullet per distinct order/item, each combining quantity + \
-product + delivery date + location + price (whatever was mentioned) in a single line. \
-Example: "25,000 lbs citric acid -> deliver to Oklahoma City warehouse by end of August".
+**What the customer needs** -- the customer's orders/requirements, one bullet each, combining \
+quantity + product + delivery date + location together (e.g., "25,000 lbs citric acid -> Oklahoma \
+City warehouse by end of August"). Put their pain points and objections here too.
 
-**Commitments & next steps** -- who committed to what, by when. Attach the specific \
-number/date to each commitment so it stands alone.
+**Your follow-ups** -- what the REP committed to do, each with its specific number/date so it \
+stands alone (e.g., "Send pricing + contract terms for the blender opportunity by Dec 14").
 
-**Context** -- decision-maker(s) and their role, buying cadence, annual targets, pain points, \
-and objections. Only put things here that do NOT belong to a specific order above.
+**Agreed terms** -- only terms BOTH sides explicitly agreed to (final quantity, price, or date). \
+Omit this section if nothing was firmly agreed.
 
-Attribute using the speaker labels. Be specific and terse. Do NOT invent anything that is \
+**Context** -- decision-maker(s) and their role, buying cadence, annual targets. Only if relevant.
+
+Do NOT include the rep's sales pitch, or prices the rep merely offered/quoted -- the rep already \
+knows those -- UNLESS the customer agreed to them. Be specific and terse. Do not invent anything \
 not clearly in the transcript. Omit any section that would be empty."""
 
 
